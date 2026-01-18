@@ -16,8 +16,23 @@ import * as boiler from "./boiler";
 import { uCursor } from "./cursor";
 import { texLoader } from "./main";
 
-// 
-const bgGui = (boiler.renderer.inspector as any).createParameters(
+// Type definition for Inspector GUI
+interface InspectorGUI {
+  close?: () => void;
+  addFolder: (name: string) => InspectorFolder;
+  add: (obj: object, key: string, min?: number, max?: number, step?: number) => InspectorElement;
+}
+
+interface InspectorFolder {
+  add: (obj: object, key: string, min?: number, max?: number, step?: number) => InspectorElement;
+}
+
+interface InspectorElement {
+  name: (label: string) => InspectorElement;
+  listen?: () => void;
+}
+
+const bgGui = (boiler.renderer as unknown as { inspector: { createParameters: (name: string) => InspectorGUI } }).inspector.createParameters(
   "Background"
 );
 
@@ -106,10 +121,33 @@ for (const settings of bgSettings) {
   noiseFolder.add(uniforms.noiseSeed, "value", 0, 1000, 1).name("Noise Seed");
 }
 
+// --- Helper function to calculate viewport-covering dimensions ---
+function getBackgroundDimensions(): [number, number] {
+  const distance = Math.abs(boiler.camera.position.z);
+  const vFOV = (boiler.camera as THREE.PerspectiveCamera).fov * Math.PI / 180; // convert to radians
+  const height = 2 * Math.tan(vFOV / 2) * distance;
+  const width = height * (window.innerWidth / window.innerHeight);
+  return [width, height];
+}
+
+// --- Store reference to background mesh for resize updates ---
+let backgroundMesh: THREE.Mesh | null = null;
+
+// --- Function to update background geometry on resize ---
+export function updateBackgroundSize(): void {
+  if (!backgroundMesh) return;
+
+  const [width, height] = getBackgroundDimensions();
+  backgroundMesh.geometry.dispose();
+  backgroundMesh.geometry = new THREE.PlaneGeometry(width, height, 1, 1);
+}
+
 // --- Background mesh ---
 export const background = (prevTexture?: THREE.Texture): THREE.Mesh => {
   const mat = new THREE.MeshBasicNodeMaterial();
-  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(50, 50, 1, 1), mat);
+  const [width, height] = getBackgroundDimensions();
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(width, height, 1, 1), mat);
+  backgroundMesh = mesh;
 
   const s = bgSettings[0].uniforms!;
   const speed = time.mul(s.speed);

@@ -1,9 +1,28 @@
-import { color, mix, normalWorld , Fn, uniform, vec4, rotate, screenCoordinate, screenSize } from 'three/tsl';
+import { color, mix, normalWorld , Fn, uniform, vec4, rotate, screenCoordinate, screenSize, type Node } from 'three/tsl';
 import * as THREE from 'three';
 import * as boiler from './boiler';
 
+// Type definition for Inspector GUI
+interface InspectorGUI {
+  close: () => void;
+  addFolder: (name: string) => InspectorFolder;
+  add: (obj: object, key: string, min?: number, max?: number, step?: number) => InspectorElement;
+  addColor: (obj: object, key: string) => InspectorElement;
+}
+
+interface InspectorFolder {
+  close: () => void;
+  add: (obj: object, key: string, min?: number, max?: number, step?: number) => InspectorElement;
+  addColor: (obj: object, key: string) => InspectorElement;
+}
+
+interface InspectorElement {
+  name: (label: string) => InspectorElement;
+  listen?: () => void;
+}
+
 // Setup Inspector GUI
-const halftoneGui = (boiler.renderer.inspector as any).createParameters("Halftone");
+const halftoneGui = (boiler.renderer as unknown as { inspector: { createParameters: (name: string) => InspectorGUI } }).inspector.createParameters("Halftone");
 halftoneGui.close();
 
 
@@ -71,7 +90,7 @@ for (const settings of halftoneSettings) {
 
 export const halftone = Fn(
   ([count, color, direction, start, end, radius, mixLow, mixHigh]: [
-    any, any, any, any, any, any, any, any
+    Node, Node, Node, Node, Node, Node, Node, Node
   ]) => {
     let gridUv = screenCoordinate.xy.div(screenSize.yy).mul(count);
     gridUv = rotate(gridUv, Math.PI * 0.25).mod(1);
@@ -90,7 +109,7 @@ export const halftone = Fn(
   }
 );
 
-export const halftones = Fn(([input]: [any]) => {
+export const halftones = Fn(([input]: [Node]) => {
   const halftonesOutput = input;
 
   for (const settings of halftoneSettings) {

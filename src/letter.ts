@@ -6,9 +6,17 @@ import { texLoader } from "./main";
 import { halftones } from "./halftones";
 import { uCursor } from "./cursor";
 
+// Type definition for Inspector GUI
+interface InspectorGUI {
+  add: (obj: object, key: string, min?: number, max?: number, step?: number) => InspectorElement;
+}
+
+interface InspectorElement {
+  name: (label: string) => InspectorElement;
+}
 
 // --- GUI ---
-export const letterGui = (boiler.renderer.inspector as any).createParameters("Letter");
+export const letterGui = (boiler.renderer as unknown as { inspector: { createParameters: (name: string) => InspectorGUI } }).inspector.createParameters("Letter");
 
 // GUI-controlled deformation uniforms
 export const uRadius = uniform(15.0);
@@ -32,13 +40,13 @@ export const letter = (l: string) => {
   const displacedPosition = positionLocal.add(vec3(0, 0, deformation));
 
   mat.positionNode = displacedPosition;
-  mat.opacityNode = alphaMask
+  mat.opacityNode = alphaMask;
 
   // --- Halftone output ---
   const ht = halftones(output); // returns vec4(color, alpha)
 
   // --- Combine halftones with letter alpha mask in OutputNode ---
-  mat.outputNode = ht
+  mat.outputNode = ht;
 
   return mesh;
 };
@@ -46,8 +54,4 @@ export const letter = (l: string) => {
 letterGui.add(uRadius, "value", 1, 50).name("radius");
 letterGui.add(uStrength, "value", 0, 30).name("strength");
 letterGui.add(uFalloff, "value", 1, 30).name("falloff");
-
-
-// const l = letter("d");
-// const create letter
 

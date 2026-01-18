@@ -41,11 +41,21 @@ function addAnimation(callback: AnimationCallback): () => void {
   return () => animationCallbacks.delete(callback);
 }
 
+// --- Resize callbacks ---
+type ResizeCallback = () => void;
+const resizeCallbacks: Set<ResizeCallback> = new Set();
+
+function addResizeListener(callback: ResizeCallback): () => void {
+  resizeCallbacks.add(callback);
+  return () => resizeCallbacks.delete(callback);
+}
+
 // --- Resize handler ---
 function handleResize(): void {
   camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight, false);
+  resizeCallbacks.forEach((cb: ResizeCallback) => cb());
 }
 
 window.addEventListener("resize", handleResize);
@@ -62,4 +72,4 @@ async function init(): Promise<void> {
 
 init();
 
-export { canvas, camera, renderer, scene, addAnimation };
+export { canvas, camera, renderer, scene, addAnimation, addResizeListener };
